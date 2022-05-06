@@ -1,0 +1,27 @@
+---
+title: "MA677 Final Project"
+author: "Chen Xu"
+date: "May 10 2022"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, echo = TRUE,out.width="0.9\\linewidth",dev="png",fig.align  = 'center')
+pacman::p_load(arm, rstanarm, ISLR,caret, MASS, class, e1071)
+```
+
+#Introduction:
+
+I choose to do the problems based on In All Likelihood.
+
+Problem 4.25
+
+```{r}
+
+```
+
+
+
+
