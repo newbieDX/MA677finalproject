@@ -292,5 +292,10 @@ From my perspective, the possible next steps are:
 2. Fit the gamma distribution with more data.
 3. May build a predictive model to validate our previous descriptive analysis.
 
+##Citation:
 
+1. I consulted this final project from Yuli Jin. 
+From Yuli Jin, I learnt to use bootstrap to generate confidence interval for gamma distribution
+2. Order statistics: https://stackoverflow.com/questions/24211595/order-statistics-in-r
+3. Fit distribution: https://cran.r-project.org/web/packages/fitdistrplus/vignettes/paper2JSS.pdf
 
