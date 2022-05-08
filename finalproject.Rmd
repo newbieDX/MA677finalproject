@@ -8,20 +8,287 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = F, echo = TRUE,out.width="0.9\\linewidth",dev="png",fig.align  = 'center')
-pacman::p_load(arm, rstanarm, ISLR,caret, MASS, class, e1071)
+knitr::opts_chunk$set(echo = T, warning=F, message = F)
+knitr::opts_chunk$set(fig.width=6, fig.height=3,fig.align = "center") 
+pacman::p_load(readxl,tidyverse, MASS, openxlsx, mle.tools, fitdistrplus, deconvolveR )
 ```
 
 #Introduction:
 
 I choose to do the problems based on In All Likelihood.
 
-Problem 4.25
+###Problem 4.25
 
 ```{r}
+# pdf
+f <- function(x, a=0, b=1) dunif(x, min=a, max=b)
+# cdf
+F <- function(x, a=0, b=1) punif(x, min=a, max=b, lower.tail=FALSE)
 
+# Distribution of the order statistics
+order_statistics <- function(x,r,n) {
+  x * (1 - F(x))^(r-1) * F(x)^(n-r) * f(x)
+}
+
+# Expectation
+median_U <- function(r,n) {
+  (1/beta(r,n-r+1)) * integrate(order_statistics,-Inf,Inf, r, n)$value
+} 
+
+# Approximation function
+approxf <-function(k,n){
+  m <- (k-1/3)/(n+1/3)
+  return(m)
+}
+
+# n = 5
+median_U(2.5,5)
+approxf(2.5,5)
+
+#n = 10
+median_U(5,10)
+approxf(5,10)
 ```
 
 
+According to the results I got, I can say that:
+
+$$
+\operatorname{median}\left\{U_{(i)}\right\} \approx \frac{i-1 / 3}{n+1 / 3}
+$$
+
+##Problem 4.39
+
+```{r}
+# Build the data set for  28 species of animals
+avg_adweight <- c(0.4,1.0,1.9,3.0,5.5,8.1,12.1,25.6,50.0,56.0,70.0,115.0,115.0,119.5,154.5,157.0,175.0,179.0,180.0,406.0)
+
+# See the distribution of the data set
+hist(avg_adweight)
+```
+
+Conduct boxcox transformation
+```{r}
+bc_transformation <- boxcox(lm(avg_adweight ~ 1))
+```
+
+As can see from the box-cox transformation plot, the $95%$ confidence interval for $\lambda$ does not include 1, so a transformation is appropriate.
+
+The next step, I extract the optimal $\lambda$ and make transformation to the original data set.
+
+Exact lambda
+```{r}
+lambda <- bc_transformation$x[which.max(bc_transformation$y)] 
+lambda
+```
+
+Check the distribution of transformed data set:
+
+```{r}
+transformed_data <- (avg_adweight ^ lambda - 1) / lambda
+hist(transformed_data)
+```
+
+##Problem 4.27
+
+Create data sets:
+
+```{r}
+Jan.1940 <-c(0.15,0.25,0.10,0.20,1.85,1.97,0.80,0.20,0.10,0.50,0.82,0.40,1.80,0.20,1.12,1.83,
+       0.45,3.17,0.89,0.31,0.59,0.10,0.10,0.90,0.10,0.25,0.10,0.90)
+
+Jul.1940 <-c(0.30,0.22,0.10,0.12,0.20,0.10,0.10,0.10,0.10,0.10,0.10,0.17,0.20,2.80,0.85,0.10,
+       0.10,1.23,0.45,0.30,0.20,1.20,0.10,0.15,0.10,0.20,0.10,0.20,0.35,0.62,0.20,1.22,
+       0.30,0.80,0.15,1.53,0.10,0.20,0.30,0.40,0.23,0.20,0.10,0.10,0.60,0.20,0.50,0.15,
+      0.60,0.30,0.80,1.10)
+```
+
+###(a)
+
+```{r}
+summary(Jan.1940)
+summary(Jul.1940)
+```
+
+After comparing the summary statistics for the two months data about the average amount of rainfall (in mm/hour) per storm in a series of storms in Valencia, southwest Ireland. Expect the minimum value, every summary statistics of January 1940 are higher than July 1940.
+
+
+###(b)
+
+QQ-plot of January 1940:
+
+```{r}
+qqnorm(Jan.1940, pch = 1)
+qqline(Jan.1940, col = "red", lwd = 2)
+```
+
+QQ-plot of July 1940:
+```{r}
+qqnorm(Jul.1940, pch = 1)
+qqline(Jul.1940, col = "red", lwd = 2)
+```
+
+Density plot(shape):
+
+```{r}
+par(mfrow = c(1, 2))  
+plot(density(Jan.1940),main='January 1940 density')
+plot(density(Jul.1940),main='July 1940 density')
+```
+
+
+The QQ-plots show that the sample doesn't follow normal distribution. From the density shape plot, these data looks like gamma distribution. Therefore, the model I suggest is gamma distribution. 
+
+
+###(c)
+
+```{r}
+Jan.fit <- fitdist(Jan.1940,'gamma','mle')
+summary(Jan.fit)
+```
+
+```{r}
+July.fit <- fitdist(Jul.1940,'gamma','mle')
+summary(July.fit)
+```
+
+For MLE, exponentiate loglikelihood into MLE:
+
+```{r}
+exp(Jan.fit$loglik)
+exp(July.fit$loglik)
+```
+
+As we can see from the value of MLE. The MLE from data of July 1940 is higher than the one of January 1940. And from the AIC and BIC, we can know that the model for data of July 1940 is better than the model for data of June 1940.
+
+Parameter comparison: The model for data of July 1940 has smaller alpha. The model for data of January has larger beta.
+
+
+###(d)
+
+Check the adequacy of the gamma model for January 1940 using a gamma QQ-plot.
+
+```{r}
+plot(Jan.fit)
+```
+
+
+Check the adequacy of the gamma model for July 1940 using a gamma QQ-plot.
+
+```{r}
+plot(July.fit)
+```
+After checking the adequacy of two gamma model, I may conclude that the model for data of July 1940 is better.
+
+
+
+## Illinois rain
+
+### Q1
+
+Use the data to identify the distribution of rainfall produced by the storms in southern Illinois.
+Estimate the parameters of the distribution using MLE. Prepare a discussion of your estimation,
+including how confident you are about your identification of the distribution and the accuracy of
+your parameter estimates.
+
+First step, check the density shape for the rainfall from southern Illinois 1960-1964 and the total 5 years.
+
+```{r fig.height=6}
+il_rain <- read.xlsx('Illinois_rain.xlsx')
+par(mfrow = c(3, 2))  
+density(il_rain$`1960` %>% na.omit()) %>% plot(main='1960')
+density(il_rain$`1961` %>% na.omit()) %>% plot(main='1961')
+density(il_rain$`1962` %>% na.omit()) %>% plot(main='1962')
+density(il_rain$`1963` %>% na.omit()) %>% plot(main='1963')
+density(il_rain$`1964` %>% na.omit()) %>% plot(main='1964')
+density(unlist(il_rain) %>%  na.omit()) %>% plot(main='Total')
+```
+
+Then I use the whole data set to fit gamma model. For method, MLE and MSE are selected to compare which method is better.
+
+```{r}
+fit1 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mle') #MLE estimation
+fit2 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mse') #MSE estimation
+```
+
+```{r eval=FALSE}
+summary(bootdist(fit1)) #bootstrap to get confidence interval
+summary(bootdist(fit2)) #bootstrap to get confidence interval
+```
+
+
+The median and 95% confidence interval is shown in the above table. Compared to MSE, MSE's confidence interval is much narrower. Therefore, MLE fits the rain data better. The confidence interval indicates that the estimation is reliable.
+
+```{r fig.height=4}
+plot(fit1)
+```
+```{r fig.height=4}
+plot(fit2)
+```
+
+### Q2 
+
+Using this distribution, identify wet years and dry years. Are the wet years wet because there were
+more storms, because individual storms produced more rain, or for both of these reasons?
+
+
+```{r}
+rain_mean=fit1$estimate[1]/fit1$estimate[2] #get mean for whole dataset
+re=apply(rain,2,mean,na.rm =TRUE) # get mean for each year
+out<-c(re,rain_mean %>% as.numeric() %>% round(4))
+names(out)[6]='mean'
+#out
+num_storm<-c(nrow(rain)-apply(is.na(rain),2,sum),'/') 
+knitr::kable(rbind(out,num_storm)) # show the result
+```
+
+Compared to mean, 1962, 1964 are dryer years, 1961 and 1963 are wetter years. 1960 is the normal year. We can also conclude that more storms don't necessarily result in wet year and more rain in individual storm don't necessarily result in wet year.    
+Therefore, both of these reasons have influence on amount of rainfall.
+
+
+```{r eval=FALSE,echo=FALSE}
+re1960=fitdist(rain$`1960` %>% na.omit() %>% c(),'gamma')
+mean1960<-re1960$estimate[1]/re1960$estimate[2]
+boot1960<-bootdist(re1960)
+summary(boot1960)
+re1961=fitdist(rain$`1961` %>% na.omit() %>% c(),'gamma')
+mean1961<-re1961$estimate[1]/re1961$estimate[2]
+boot1961<-bootdist(re1961)
+summary(boot1961)
+re1962=fitdist(rain$`1962` %>% na.omit() %>% c(),'gamma')
+mean1962<-re1962$estimate[1]/re1962$estimate[2]
+boot1962<-bootdist(re1962)
+summary(boot1962)
+re1963=fitdist(rain$`1963` %>% na.omit() %>% c(),'gamma')
+mean1963<-re1963$estimate[1]/re1963$estimate[2]
+boot1963<-bootdist(re1963)
+summary(boot1963)
+re1964=fitdist(rain$`1964` %>% na.omit() %>% c(),'gamma')
+mean1964<-re1964$estimate[1]/re1964$estimate[2]
+boot1964<-bootdist(re1964)
+summary(boot1964)
+year<-c(1960,1961,1962,1963,1964) %>% as.character()
+mean<-c(mean1960,mean1961,mean1962,mean1963,mean1964) %>% as.numeric() %>% round(5)
+num_storm<-c(nrow(rain)-apply(is.na(rain),2,sum)) %>% as.character()
+df<-rbind(mean,num_storm)
+colnames(df)<-year
+knitr::kable(df,'pipe')
+```
+
+I also conduct fitdist on each individual year. The results are shown below:
+
+|          |1960    |1961    |1962    |1963    |1964    |
+|:---------|:-------|:-------|:-------|:-------|:-------|
+|mean      |0.22032 |0.27494 |0.18475 |0.26245 |0.18713 |
+|num_storm |48      |48      |56      |37      |38      |
+
+
+### Q3
+
+To what extent do you believe the results of your analysis are generalizable? What do you think
+the next steps would be after the analysis? An article by Floyd Huff, one of the authors of the 1967
+report is included.
+
+Five years' data isn't credential enough for verification. The next step is to collect more data to confirm the result. Huff's article mainly focuses on description statistics. He didn't build a reliable data to further analyze it. 
 
 
