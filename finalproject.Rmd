@@ -9,7 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T, warning=F, message = F)
-knitr::opts_chunk$set(fig.width=6, fig.height=3,fig.align = "center") 
+knitr::opts_chunk$set(fig.width = 6, fig.height=4,fig.align = "center") 
 pacman::p_load(knitr, readxl,tidyverse, MASS, openxlsx, mle.tools, fitdistrplus, deconvolveR )
 ```
 
@@ -174,14 +174,14 @@ Parameter comparison: The model for data of July 1940 has smaller alpha. The mod
 
 Check the adequacy of the gamma model for January 1940 using a gamma QQ-plot.
 
-```{r}
+```{r fig.height=4}
 plot(Jan.fit)
 ```
 
 
 Check the adequacy of the gamma model for July 1940 using a gamma QQ-plot.
 
-```{r}
+```{r fig.height=4}
 plot(July.fit)
 ```
 After checking the adequacy of two gamma model, I may conclude that the model for data of July 1940 is better.
@@ -213,7 +213,7 @@ density(unlist(il_rain) %>%  na.omit()) %>% plot(main='Total')
 From the distribution density shape, we can see gamma distribution should be the better choice. Then I use the whole data set to fit a gamma model.
 
 ```{r}
-# fit1 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mle') #MLE estimation
+fit1 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mle') #MLE estimation
 ```
 
 Use gamma QQ-plot to check if gamma distribution a good fit for the rainfall data:
@@ -229,14 +229,14 @@ In order to show how confidence I am about the identification of the distributio
 ```{r}
 set.seed(1234)
 # calculate MSE and MLE
-# fit2 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mse') #MLE estimation
-# boot_mse  <-  bootdist(fit2)
+fit2 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mse') #MLE estimation
+boot_mse  <-  bootdist(fit2)
 summary(boot_mse)
 ```
 
 
 ```{r}
-# boot_mle  <-  bootdist(fit1)
+boot_mle  <-  bootdist(fit1)
 summary(boot_mle)
 ```
 
@@ -281,9 +281,16 @@ Compared to average storm rainfall each year with the baseline average, the year
 
 ###(3)
 
-To what extent do you believe the results of your analysis are generalizable? What do you think
-the next steps would be after the analysis? An article by Floyd Huff, one of the authors of the 1967
-report is included.
+To what extent do you believe the results of your analysis are generalizable? 
 
-Five years' data isn't credential enough for verification. The next step is to collect more data to confirm the result. Huff's article mainly focuses on description statistics. He didn't build a reliable data to further analyze it. 
+From my perspective, 5-year data is not enough for my analysis to be generalizable. From Floyd Huff's Time Distribution Rainall in Heavy Storms in 1967. He used Network data for the 11-year period 1955 - 1966.
+
+What do you think the next steps would be after the analysis? 
+
+From my perspective, the possible next steps are:
+1. Build a reusable database to collect and track more years of storm rainfall data.
+2. Fit the gamma distribution with more data.
+3. May build a predictive model to validate our previous descriptive analysis.
+
+
 
