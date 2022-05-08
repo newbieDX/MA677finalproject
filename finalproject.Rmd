@@ -1,6 +1,6 @@
 ---
 title: "MA677 Final Project"
-author: "Chen Xu"
+author: "Chen Xu(U49903384)"
 date: "May 10 2022"
 output: 
   pdf_document: 
@@ -10,7 +10,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T, warning=F, message = F)
 knitr::opts_chunk$set(fig.width=6, fig.height=3,fig.align = "center") 
-pacman::p_load(readxl,tidyverse, MASS, openxlsx, mle.tools, fitdistrplus, deconvolveR )
+pacman::p_load(knitr, readxl,tidyverse, MASS, openxlsx, mle.tools, fitdistrplus, deconvolveR )
 ```
 
 #Introduction:
@@ -41,10 +41,16 @@ approxf <-function(k,n){
   return(m)
 }
 
+```
+
+```{r}
 # n = 5
 median_U(2.5,5)
 approxf(2.5,5)
+```
 
+
+```{r}
 #n = 10
 median_U(5,10)
 approxf(5,10)
@@ -184,14 +190,14 @@ After checking the adequacy of two gamma model, I may conclude that the model fo
 
 ## Illinois rain
 
-### Q1
+###(1)
 
 Use the data to identify the distribution of rainfall produced by the storms in southern Illinois.
 Estimate the parameters of the distribution using MLE. Prepare a discussion of your estimation,
 including how confident you are about your identification of the distribution and the accuracy of
 your parameter estimates.
 
-First step, check the density shape for the rainfall from southern Illinois 1960-1964 and the total 5 years.
+First step, check the density shape for the rainfall from southern Illinois 1960-1964 and the total 5 years to determine what distribution model to use.
 
 ```{r fig.height=6}
 il_rain <- read.xlsx('Illinois_rain.xlsx')
@@ -204,91 +210,80 @@ density(il_rain$`1964` %>% na.omit()) %>% plot(main='1964')
 density(unlist(il_rain) %>%  na.omit()) %>% plot(main='Total')
 ```
 
-Then I use the whole data set to fit gamma model. For method, MLE and MSE are selected to compare which method is better.
+From the distribution density shape, we can see gamma distribution should be the better choice. Then I use the whole data set to fit a gamma model.
 
 ```{r}
-fit1 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mle') #MLE estimation
-fit2 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mse') #MSE estimation
+# fit1 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mle') #MLE estimation
 ```
 
-```{r eval=FALSE}
-summary(bootdist(fit1)) #bootstrap to get confidence interval
-summary(bootdist(fit2)) #bootstrap to get confidence interval
-```
-
-
-The median and 95% confidence interval is shown in the above table. Compared to MSE, MSE's confidence interval is much narrower. Therefore, MLE fits the rain data better. The confidence interval indicates that the estimation is reliable.
+Use gamma QQ-plot to check if gamma distribution a good fit for the rainfall data:
 
 ```{r fig.height=4}
 plot(fit1)
 ```
-```{r fig.height=4}
-plot(fit2)
+
+According to the Empirical the theoretical CDFs and P-P plot, the data points almost excellent fit the gamma distribution. Although in Q-Q plot, the points after 1.0 theoretical quarantines are a little bit discrete from the gamma distribution. Generally, the gamma distribution was a good fit for the total rainfall data.
+
+In order to show how confidence I am about the identification of the distribution and the accuracy of my parameter estimates, I will compare the $95\%$ confidence interval between the distribution using MLE and MSE using bootstrap.
+
+```{r}
+set.seed(1234)
+# calculate MSE and MLE
+# fit2 <- fitdist(unlist(il_rain) %>%  na.omit() %>% c(),'gamma',method='mse') #MLE estimation
+# boot_mse  <-  bootdist(fit2)
+summary(boot_mse)
 ```
 
-### Q2 
+
+```{r}
+# boot_mle  <-  bootdist(fit1)
+summary(boot_mle)
+```
+
+For MSE, the 95% confidence interval of shape from bootstrap sample is (0.6279317,0.8527069), the rate is (1.0810701,1.6691432). 
+
+For MLE, the 95% confidence interval of shape from bootstrap sample is (0.3843748,0.5178236),the rate is (1.5576238, 2.5654712).   
+
+Apparently, the MLE estimates have narrow $95\%$ and thus lower variances. I would suggest MLE being the estimator because it has lower variance.
+
+The confidence interval indicates that the estimation is reliable.
+
+###(2) 
 
 Using this distribution, identify wet years and dry years. Are the wet years wet because there were
 more storms, because individual storms produced more rain, or for both of these reasons?
 
+In order to compare wet years and dry years, I first calculate the average storm rainfall through the five year as a baseline, and calculate each year's average storm rainfall.
 
 ```{r}
-rain_mean=fit1$estimate[1]/fit1$estimate[2] #get mean for whole dataset
-re=apply(rain,2,mean,na.rm =TRUE) # get mean for each year
-out<-c(re,rain_mean %>% as.numeric() %>% round(4))
-names(out)[6]='mean'
-#out
-num_storm<-c(nrow(rain)-apply(is.na(rain),2,sum),'/') 
-knitr::kable(rbind(out,num_storm)) # show the result
+rf_mean <- fit1$estimate[1]/fit1$estimate[2]   
+rf_yealy <- apply(il_rain,2,mean,na.rm =TRUE) 
+avg_storm_rf <- c(rf_yealy,rf_mean %>% as.numeric() %>% round(4))
+names(avg_storm_rf)[6]= '5 year avg'
+avg_storm_rf
 ```
 
-Compared to mean, 1962, 1964 are dryer years, 1961 and 1963 are wetter years. 1960 is the normal year. We can also conclude that more storms don't necessarily result in wet year and more rain in individual storm don't necessarily result in wet year.    
-Therefore, both of these reasons have influence on amount of rainfall.
+Then generating the number of storms for each year:
 
-
-```{r eval=FALSE,echo=FALSE}
-re1960=fitdist(rain$`1960` %>% na.omit() %>% c(),'gamma')
-mean1960<-re1960$estimate[1]/re1960$estimate[2]
-boot1960<-bootdist(re1960)
-summary(boot1960)
-re1961=fitdist(rain$`1961` %>% na.omit() %>% c(),'gamma')
-mean1961<-re1961$estimate[1]/re1961$estimate[2]
-boot1961<-bootdist(re1961)
-summary(boot1961)
-re1962=fitdist(rain$`1962` %>% na.omit() %>% c(),'gamma')
-mean1962<-re1962$estimate[1]/re1962$estimate[2]
-boot1962<-bootdist(re1962)
-summary(boot1962)
-re1963=fitdist(rain$`1963` %>% na.omit() %>% c(),'gamma')
-mean1963<-re1963$estimate[1]/re1963$estimate[2]
-boot1963<-bootdist(re1963)
-summary(boot1963)
-re1964=fitdist(rain$`1964` %>% na.omit() %>% c(),'gamma')
-mean1964<-re1964$estimate[1]/re1964$estimate[2]
-boot1964<-bootdist(re1964)
-summary(boot1964)
-year<-c(1960,1961,1962,1963,1964) %>% as.character()
-mean<-c(mean1960,mean1961,mean1962,mean1963,mean1964) %>% as.numeric() %>% round(5)
-num_storm<-c(nrow(rain)-apply(is.na(rain),2,sum)) %>% as.character()
-df<-rbind(mean,num_storm)
-colnames(df)<-year
-knitr::kable(df,'pipe')
+```{r}
+num_storm<-c(nrow(il_rain)-apply(is.na(il_rain),2,sum),'/')
+num_storm
 ```
 
-I also conduct fitdist on each individual year. The results are shown below:
+Use table to show the result:
 
-|          |1960    |1961    |1962    |1963    |1964    |
-|:---------|:-------|:-------|:-------|:-------|:-------|
-|mean      |0.22032 |0.27494 |0.18475 |0.26245 |0.18713 |
-|num_storm |48      |48      |56      |37      |38      |
+|Year      |1960    |1961    |1962    |1963    |1964    | 5-year average|
+|:---------|:-------|:-------|:-------|:-------|:-------|:-------       |
+|Average   |0.22029 |0.27494 |0.18475 |0.26243 |0.18711 |0.22440        |
+|Num storm |48      |48      |56      |37      |38      |45.4           |
 
+Compared to average storm rainfall each year with the baseline average, the year 1962, 1964 were dry years, the year 1961 and 1963 were wet years. The year 1960 is a normal year. But when we compare the number of storms for each, we can conclude that the year 1962 was a wet year, the year 1963 and 1964 were dry years and the year 1960 and 1961 were normal years. As a result, we may conclude that more storms don't necessarily result in wet year and more average rainfall in individual storm don't necessarily result in wet year, both of these reasons have influence on whether a year is a wet or dry year.
 
-### Q3
+###(3)
 
 To what extent do you believe the results of your analysis are generalizable? What do you think
 the next steps would be after the analysis? An article by Floyd Huff, one of the authors of the 1967
 report is included.
 
 Five years' data isn't credential enough for verification. The next step is to collect more data to confirm the result. Huff's article mainly focuses on description statistics. He didn't build a reliable data to further analyze it. 
-
 
