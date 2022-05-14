@@ -52,8 +52,8 @@ approxf <-function(i,n){
 
 ```{r}
 #n = 10
-(median_U(5,10) + median_U(6,10))/2
-(approxf(5,10) + approxf(6,10))/2
+median_U(5,10)
+approxf(5,10)
 ```
 
 
