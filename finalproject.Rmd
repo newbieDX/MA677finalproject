@@ -26,18 +26,18 @@ f <- function(x, a=0, b=1) dunif(x, min=a, max=b)
 F <- function(x, a=0, b=1) punif(x, min=a, max=b, lower.tail=FALSE)
 
 # Distribution of the order statistics
-order_statistics <- function(x,r,n) {
-  x * (1 - F(x))^(r-1) * F(x)^(n-r) * f(x)
+order_statistics <- function(x,i,n) {
+  x * (1 - F(x))^(i-1) * F(x)^(n-i) * f(x)
 }
 
 # Expectation
-median_U <- function(r,n) {
-  (1/beta(r,n-r+1)) * integrate(order_statistics,-Inf,Inf, r, n)$value
+median_U <- function(i,n) {
+  (1/beta(i,n-i+1)) * integrate(order_statistics,-Inf,Inf, i, n)$value
 } 
 
 # Approximation function
-approxf <-function(k,n){
-  m <- (k-1/3)/(n+1/3)
+approxf <-function(i,n){
+  m <- (i-1/3)/(n+1/3)
   return(m)
 }
 
@@ -45,15 +45,15 @@ approxf <-function(k,n){
 
 ```{r}
 # n = 5
-median_U(2.5,5)
-approxf(2.5,5)
+(median_U(2,5) + median_U(3,5))/2
+(approxf(2,5) + approxf(3,5))/2
 ```
 
 
 ```{r}
 #n = 10
-median_U(5,10)
-approxf(5,10)
+(median_U(5,10) + median_U(6,10))/2
+(approxf(5,10) + approxf(6,10))/2
 ```
 
 
